@@ -5,7 +5,7 @@
 
 文件：可运行bat文件、训练日志、测试日志等相关文件
 
-  *lenet_iter_10000.caffemodel：迭代10000次训练出来的caffe模型（模型权值文件）
-  *lenet_iter_10000.olverstate：迭代10000次训练出来的caffe求解器状态（求解器状态文件）
+~lenet_iter_10000.caffemodel：迭代10000次训练出来的caffe模型（模型权值文件）
+~lenet_iter_10000.olverstate：迭代10000次训练出来的caffe求解器状态（求解器状态文件）
 
 
