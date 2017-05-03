@@ -1,0 +1,171 @@
+name: "LeNet"
+layer {
+  name: "mnist"
+  type: "Data"    //层的类型为data层 
+  top: "data"     //层的输出blob有两个：data和label
+  top: "label"
+  include {
+    phase: TRAIN     //训练阶段
+  }
+  transform_param {
+    scale: 0.00390625   //数据变换使用的数据缩放因子
+//对所有的图片归一化到0~1之间，也就是对输入数据全部乘以scale，0.0039= 1/255  
+  }
+  data_param {
+    source: "../../../examples/mnist/Deal_Data/mnist_train_lmdb"
+    //训练数据图片路径
+    batch_size: 64    //批次数目，一次读取64张图
+    backend: LMDB     //数据格式为LMDB
+  }
+}
+layer {
+  name: "mnist"
+  type: "Data"    //层的类型为data层 
+  top: "data"     //层的输出blob有两个：data和label
+  top: "label"
+  include {
+    phase: TEST    //测试阶段
+  }
+  transform_param {
+    scale: 0.00390625
+  }
+  data_param {
+    source: "../../../examples/mnist/Deal_Data/mnist_test_lmdb"
+    //测试数据图片路径 
+    batch_size: 100
+    backend: LMDB
+  }
+}
+layer {
+  name: "conv1"    //卷积神经网络的第一层，卷积层
+  type: "Convolution"    //这层操作为卷积
+  bottom: "data"   //层的输入为data
+  top: "conv1"     //层的输出为conv1
+  param {
+    lr_mult: 1     //权值学习速率倍乘因子，1倍表示保持与全局参数一致
+  }
+  param {
+    lr_mult: 2     //bias学习倍率倍乘因子，是全局参数的2倍
+  }
+  convolution_param {
+    num_output: 20    //定义输出特征图个数
+    kernel_size: 5    //定义卷积核大小
+    stride: 1         //卷积输出跳跃间隔，1表示连续输出
+    weight_filler {   //权值使用xavier填充器
+      type: "xavier"
+    }
+    bias_filler {     //bias使用常数填充器，默认为0
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "pool1"
+  type: "Pooling"    //池化层，这一层的操作为池化
+  bottom: "conv1"    //层的输入为conv1
+  top: "pool1"       //层的输出为pool1
+  pooling_param {
+    pool: MAX        //最大池化
+    kernel_size: 2   //下采样窗口尺寸2*2
+    stride: 2        //下采样输出跳跃间隔2*2
+  }
+}
+layer {              //新的卷积层，和conv1类似
+  name: "conv2"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 50
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {              //新的下采样层，和pool1类似
+  name: "pool2"
+  type: "Pooling"
+  bottom: "conv2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {              //新的全连接层
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "pool2"    //输入为pool2
+  top: "ip1"         //输出为ip1
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 500
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {              //新的非线性层，用ReLU方法
+  name: "relu1"
+  type: "ReLU"
+  bottom: "ip1"      
+  top: "ip1"
+}
+layer {
+  name: "ip2"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "ip2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 10
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {             //分类准确率层，只要Testing阶段有效
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "ip2"     //输入为ip2和label
+  bottom: "label"
+  top: "accuracy"   //输出为accuracy
+  include {
+    phase: TEST
+  }
+}
+layer {             //损失层，采用SoftmaxWithLoss
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "ip2"     //输入为ip2和label
+  bottom: "label"
+  top: "loss"       //输出为loss
+}
